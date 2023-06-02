@@ -52,7 +52,8 @@ Many of the options are self-explanatory, and all should be adjusted to suit you
 In addition, there are some other options which have sensible defaults, but can be adjusted if needed.  These are:
 
 * JAIL_NAME: The name of the jail, defaults to "nextcloud"
-* DB_PATH. This is the path to your database files. It defaults to $POOL_PATH/guacamole
+* DB_PATH. This is the path to your database files. It defaults to POOL_PATH/guacamole/db
+* CONFIG_PATH.  This is the path to  password files for the database. ( needed for reinstall) It  defaults to POOL_PATH/guacamole/config
 * INTERFACE: The network interface to use for the jail.  Defaults to `vnet0`.
 * JAIL_INTERFACES: Defaults to `vnet0:bridge0`, but you can use this option to select a different network bridge if desired.  This is an advanced option; you're on your own here.
 * VNET: Whether to use the iocage virtual network stack.  Defaults to `on`.
