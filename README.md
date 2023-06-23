@@ -76,6 +76,6 @@ Visit the [Caddy download page](https://caddyserver.com/download) to see the DNS
 ### Notes
 - Reinstalls work as expected when all the files are present.
 - The way this script handles passwords for old database is by storing them in a directory that can be accessed when reinstalling. If you try to reinstall without them, guacamole will not work and will show error.
-- This script copies the default server.xml file with the addition of the remoteIpHeader Valve, with the value set to 127.0.0.1 This is necessary for guacamole to properly log sessions with the correct IP. If set behind another reverse proxy, this value can be changed to the proxy IP, or alternately , the Caddyfile can be edited to trust the reverse proxy. The file is at `/usr/local/apache-tomcat-9/conf/server.xml`
+- This script copies the default server.xml file with the addition of the remoteIpHeader Valve, with the value set to 127.0.0.1 This is necessary for guacamole to properly log sessions with the correct IP. If set behind another reverse proxy, this value can be changed to the proxy IP, or alternately , the Caddyfile can be edited to trust the reverse proxy. The file is at `/usr/local/apache-tomcat-9.0/conf/server.xml`
 - Guacamole Trusted Proxy https://guacamole.apache.org/doc/gug/reverse-proxy.html
 - Caddy Trusted Proxy https://caddyserver.com/docs/caddyfile/options#trusted-proxies
