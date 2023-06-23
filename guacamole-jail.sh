@@ -249,6 +249,9 @@ else
 	iocage exec "${JAIL_NAME}" "cat /tmp/guacamole-auth-jdbc-*/mysql/schema/*.sql | mysql -u root -p"${MYSQLROOT}" guacamole_db"
 fi
 
+# Copy server.xml file for tomcat9 (adds internalProxies valve)
+iocage exec "${JAIL_NAME}" cp -f /mnt/includes/server.xml /usr/local/apache-tomcat-9.0/conf/server.xml
+
 # Start services
 iocage exec "${JAIL_NAME}" service mysql-server restart
 iocage exec "${JAIL_NAME}" service guacd restart
@@ -311,6 +314,7 @@ else
 	echo "Copying Caddyfile for Let's Encrypt cert"
 	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/Caddyfile-standalone /usr/local/www/Caddyfile	
 fi
+# Copy caddy rc.d file
 iocage exec "${JAIL_NAME}" cp -f /mnt/includes/caddy /usr/local/etc/rc.d/
 
 # Edit Caddyfile
