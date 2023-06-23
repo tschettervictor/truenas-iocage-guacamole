@@ -250,6 +250,7 @@ else
 fi
 
 # Copy server.xml file for tomcat9 (adds internalProxies valve)
+iocage exec "${JAIL_NAME}" cp /usr/local/apache-tomcat-9.0/conf/server.xml /usr/local/apache-tomcat-9.0/conf/server.xml.bak
 iocage exec "${JAIL_NAME}" cp -f /mnt/includes/server.xml /usr/local/apache-tomcat-9.0/conf/server.xml
 
 # Start services
