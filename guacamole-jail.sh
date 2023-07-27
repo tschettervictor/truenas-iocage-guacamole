@@ -52,7 +52,7 @@ RELEASE=$(freebsd-version | cut -d - -f -1)"-RELEASE"
 #
 #####
 
-# Check that necessary variables were set by vaultwarden-config
+# Check that necessary variables were set by guacamole-config
 if [ -z "${JAIL_IP}" ]; then
   echo 'Configuration error: JAIL_IP must be set'
   exit 1
