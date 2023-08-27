@@ -23,7 +23,8 @@ VNET="on"
 POOL_PATH=""
 JAIL_NAME="guacamole"
 HOST_NAME=""
-DATABASE="mysql"
+DATABASE="mariadb"
+DB_NAME="MariaDB"
 DB_PATH=""
 CONFIG_PATH=""
 SELFSIGNED_CERT=0
@@ -32,6 +33,8 @@ DNS_CERT=0
 NO_CERT=0
 CERT_EMAIL=""
 CONFIG_NAME="guacamole-config"
+DB_NAME="guacamole"
+DB_USER="guacamole"
 
 # Check for guacamole-config and set configuration
 SCRIPT=$(readlink -f "$0")
@@ -152,15 +155,14 @@ if [ "$(ls -A "${DB_PATH}")" ]; then
 fi
 
 if [ "${REINSTALL}" == "true" ]; then
-	MYSQLROOT=$(cat "${CONFIG_PATH}"/mysql_db_password.txt)
-	GUACAMOLE_PASSWORD=$(cat "${CONFIG_PATH}"/guacamole_db_password.txt)
+	DB_ROOT_PASSWORD=$(cat "${CONFIG_PATH}"/${DATABASE}_db_password.txt)
+	DB_PASSWORD=$(cat "${CONFIG_PATH}"/${DB_NAME}_db_password.txt)
 	echo "Reinstall detected. Using existing passwords."
 else	
-	MYSQLROOT=$(openssl rand -base64 15)
-	GUACAMOLE_PASSWORD=$(openssl rand -base64 15)
+	DB_ROOT_PASSWORD=$(openssl rand -base64 15)
+	DB_PASSWORD=$(openssl rand -base64 15)
 	echo "Generating new passwords for database..."
 fi
-DB_NAME="MySQL"
 
 #####
 #
@@ -176,7 +178,8 @@ cat <<__EOF__ >/tmp/pkg.json
   "go",
   "guacamole-server",
   "guacamole-client",
-  "mysql80-server",
+  "mariadb106-server",
+  "mariadb106-client",
   "mysql-connector-java"
   ]
 }
@@ -207,21 +210,19 @@ iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/rc.d
 iocage fstab -a "${JAIL_NAME}" "${DB_PATH}"/"${DATABASE}" /var/db/mysql nullfs rw 0 0
 iocage fstab -a "${JAIL_NAME}" "${INCLUDES_PATH}" /mnt/includes nullfs rw 0 0
 iocage fstab -a "${JAIL_NAME}" "${CONFIG_PATH}" /mnt/config nullfs rw 0 0
-
-# Create folders for guacamole
 iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/guacamole-client/lib
 iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/guacamole-client/extensions
-
-# Add services to startup
-iocage exec "${JAIL_NAME}" sysrc guacd_enable="YES"
-iocage exec "${JAIL_NAME}" sysrc tomcat9_enable="YES"
-iocage exec "${JAIL_NAME}" sysrc mysql_enable="YES"
 
 #####
 #
 # Guacamole Install
 #
 #####
+
+# Add services to startup
+iocage exec "${JAIL_NAME}" sysrc guacd_enable="YES"
+iocage exec "${JAIL_NAME}" sysrc tomcat9_enable="YES"
+iocage exec "${JAIL_NAME}" sysrc mysql_enable="YES"
 
 # Extract java connector to guacamole
 iocage exec "${JAIL_NAME}" "cp -f /usr/local/share/java/classes/mysql-connector-java.jar /usr/local/etc/guacamole-client/lib"
@@ -240,17 +241,29 @@ iocage exec "${JAIL_NAME}" sed -i -e 's/'localhost'/'0.0.0.0'/g' /usr/local/etc/
 # Add database connection
 iocage exec "${JAIL_NAME}" 'echo "mysql-hostname: localhost" >> /usr/local/etc/guacamole-client/guacamole.properties'
 iocage exec "${JAIL_NAME}" 'echo "mysql-port:     3306" >> /usr/local/etc/guacamole-client/guacamole.properties'
-iocage exec "${JAIL_NAME}" 'echo "mysql-database: guacamole_db" >> /usr/local/etc/guacamole-client/guacamole.properties'
-iocage exec "${JAIL_NAME}" 'echo "mysql-username: guacamole_user" >> /usr/local/etc/guacamole-client/guacamole.properties'
-iocage exec "${JAIL_NAME}" 'echo "mysql-password: '${GUACAMOLE_PASSWORD}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
+iocage exec "${JAIL_NAME}" 'echo "mysql-database: ${DB_NAME}" >> /usr/local/etc/guacamole-client/guacamole.properties'
+iocage exec "${JAIL_NAME}" 'echo "mysql-username: ${DB_USER}" >> /usr/local/etc/guacamole-client/guacamole.properties'
+iocage exec "${JAIL_NAME}" 'echo "mysql-password: '${DB_PASSWORD}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
 
 iocage exec "${JAIL_NAME}" service mysql-server start
 
 if [ "${REINSTALL}" == "true" ]; then
-	echo "You did a reinstall, please use your old database and account credentials"
+	echo "You did a reinstall, please use your old database and account credentials."
+ 	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
+  	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 else
-	iocage exec "${JAIL_NAME}" mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${MYSQLROOT}';CREATE DATABASE guacamole_db;CREATE USER 'guacamole_user'@'localhost' IDENTIFIED BY '${GUACAMOLE_PASSWORD}';GRANT SELECT,INSERT,UPDATE,DELETE ON guacamole_db.* TO 'guacamole_user'@'localhost';FLUSH PRIVILEGES;";
-	iocage exec "${JAIL_NAME}" "cat /tmp/guacamole-auth-jdbc-*/mysql/schema/*.sql | mysql -u root -p"${MYSQLROOT}" guacamole_db"
+	#iocage exec "${JAIL_NAME}" mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}';CREATE DATABASE 'guacamole_db';CREATE USER 'guacamole_user'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';GRANT SELECT,INSERT,UPDATE,DELETE ON guacamole_db.* TO 'guacamole_user'@'localhost';FLUSH PRIVILEGES;";
+	iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "GRANT ALL PRIVILEGES ON ${DB_NAME}.* to '${DB_USER}'@'%';"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "DROP DATABASE IF EXISTS test;"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "FLUSH PRIVILEGES;"
+	iocage exec "${JAIL_NAME}" mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
+	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
+	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
+	iocage exec "${JAIL_NAME}" "cat /tmp/guacamole-auth-jdbc-*/mysql/schema/*.sql | mysql -u root -p"${DB_ROOT_PASSWORD}" guacamole_db"
 fi
 
 # Copy server.xml file for tomcat9 (adds internalProxies valve)
@@ -341,10 +354,10 @@ if [ "${REINSTALL}" == "true" ]; then
 	echo "Passwords do not need saving, they are the same."
 else
 	echo "${DB_NAME} root user is root and password is ${MYSQLROOT}" > /root/${JAIL_NAME}_db_password.txt
-	echo "Guacamole database user is guacamole_user and password is ${GUACAMOLE_PASSWORD}" >> /root/${JAIL_NAME}_db_password.txt
-	echo "Guacamole default username and password are bothe guacadmin." >> /root/${JAIL_NAME}_db_password.txt
-	echo "${MYSQLROOT}" > "${CONFIG_PATH}"/${DATABASE}_db_password.txt
-	echo "${GUACAMOLE_PASSWORD}" > "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt
+	echo "Guacamole database user is ${DB_USER} and password is ${DB_PASSWORD}" >> /root/${JAIL_NAME}_db_password.txt
+	echo "Guacamole default username and password are both guacadmin." >> /root/${JAIL_NAME}_db_password.txt
+	echo "${DB_ROOT_PASSWORD}" > "${CONFIG_PATH}"/${DATABASE}_db_password.txt
+	echo "${DB_PASSWORD}" > "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt
 fi
 
 echo ""
@@ -382,7 +395,7 @@ else
 	echo "MySQL Username: root"
 	echo "MySQL Password: "$MYSQLROOT""
 	echo "Guacamole DB User: guacamole_user"
-	echo "Guacamole DB Password: "$GUACAMOLE_PASSWORD""
+	echo "Guacamole DB Password: "$DB_PASSWORD""
 fi
 
 echo "All passwords are saved in /root/${JAIL_NAME}_db_password.txt"
