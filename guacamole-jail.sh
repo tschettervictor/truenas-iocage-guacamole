@@ -156,7 +156,7 @@ fi
 
 if [ "${REINSTALL}" == "true" ]; then
 	DB_ROOT_PASSWORD=$(cat "${CONFIG_PATH}"/${DATABASE}_db_password.txt)
-	DB_PASSWORD=$(cat "${CONFIG_PATH}"/${DB_NAME}_db_password.txt)
+	DB_PASSWORD=$(cat "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt)
 	echo "Reinstall detected. Using existing passwords."
 else	
 	DB_ROOT_PASSWORD=$(openssl rand -base64 15)
@@ -356,7 +356,7 @@ iocage exec "${JAIL_NAME}" service caddy start
 if [ "${REINSTALL}" == "true" ]; then
 	echo "Passwords do not need saving, they are the same."
 else
-	echo "${DB_NAME} root user is root and password is ${MYSQLROOT}" > /root/${JAIL_NAME}_db_password.txt
+	echo "${DB_NAME} root user is root and password is ${DB_ROOT_PASSWORD}" > /root/${JAIL_NAME}_db_password.txt
 	echo "Guacamole database user is ${DB_USER} and password is ${DB_PASSWORD}" >> /root/${JAIL_NAME}_db_password.txt
 	echo "Guacamole default username and password are both guacadmin." >> /root/${JAIL_NAME}_db_password.txt
 	echo "${DB_ROOT_PASSWORD}" > "${CONFIG_PATH}"/${DATABASE}_db_password.txt
