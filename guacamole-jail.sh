@@ -134,8 +134,7 @@ fi
 
 # Check for reinstall
 if [ "$(ls -A "${DB_PATH}")" ]; then
-	echo "Existing Guacamole database detected"
- 	echo "Checking compatability for reinstall..."
+	echo "Existing Guacamole database detected. Checking compatability for reinstall."
 	if [ "$(ls -A "${DB_PATH}/${DATABASE}")" ]; then
 		echo "Database is compatible, continuing..."
 		REINSTALL="true"
@@ -297,7 +296,6 @@ if [ $SELFSIGNED_CERT -eq 1 ]; then
 	iocage exec "${JAIL_NAME}" cp /mnt/includes/fullchain.pem /usr/local/etc/pki/tls/certs/fullchain.pem
 fi
 
-# Copy necessary files from /includes
 if [ $STANDALONE_CERT -eq 1 ] || [ $DNS_CERT -eq 1 ]; then
   iocage exec "${JAIL_NAME}" cp -f /mnt/includes/remove-staging.sh /root/
 fi
@@ -314,27 +312,23 @@ else
 	echo "Copying Caddyfile for Let's Encrypt cert"
 	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/Caddyfile-standalone /usr/local/www/Caddyfile	
 fi
-# Copy caddy rc.d file
 iocage exec "${JAIL_NAME}" cp -f /mnt/includes/caddy /usr/local/etc/rc.d/
-
-# Edit Caddyfile
 iocage exec "${JAIL_NAME}" sed -i '' "s/yourhostnamehere/${HOST_NAME}/" /usr/local/www/Caddyfile
 iocage exec "${JAIL_NAME}" sed -i '' "s/dns_plugin/${DNS_PLUGIN}/" /usr/local/www/Caddyfile
 iocage exec "${JAIL_NAME}" sed -i '' "s/api_token/${DNS_TOKEN}/" /usr/local/www/Caddyfile
 iocage exec "${JAIL_NAME}" sed -i '' "s/youremailhere/${CERT_EMAIL}/" /usr/local/www/Caddyfile
-
-# Don't need /mnt/includes any more, so unmount it
-iocage fstab -r "${JAIL_NAME}" "${INCLUDES_PATH}" /mnt/includes nullfs rw 0 0
-
-# Enable and start caddy
 iocage exec "${JAIL_NAME}" sysrc caddy_config="/usr/local/www/Caddyfile"
 iocage exec "${JAIL_NAME}" sysrc caddy_enable="YES"
-iocage exec "${JAIL_NAME}" service caddy start
 
 # Save passwords for later reference
 echo "${DATABASE} root user is root and password is ${DB_ROOT_PASSWORD}" > /root/${JAIL_NAME}_db_password.txt
 echo "Guacamole database user is ${DB_USER} and password is ${DB_PASSWORD}" >> /root/${JAIL_NAME}_db_password.txt
 echo "Guacamole default username and password are both guacadmin." >> /root/${JAIL_NAME}_db_password.txt
+
+# Don't need /mnt/includes any more, so unmount it
+iocage fstab -r "${JAIL_NAME}" "${INCLUDES_PATH}" /mnt/includes nullfs rw 0 0
+
+iocage restart "${JAIL_NAME}"
 
 echo "---------------"
 echo "Installation complete."
