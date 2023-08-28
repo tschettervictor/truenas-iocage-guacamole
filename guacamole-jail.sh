@@ -366,8 +366,8 @@ fi
 echo "---------------"
 echo "Installation complete."
 echo "---------------"
-echo ""
 if [ $STANDALONE_CERT -eq 1 ] || [ $DNS_CERT -eq 1 ]; then
+  echo ""
   echo "You have obtained your Let's Encrypt certificate using the staging server."
   echo "This certificate will not be trusted by your browser and will cause SSL errors"
   echo "when you connect.  Once you've verified that everything else is working"
@@ -383,8 +383,8 @@ elif [ $SELFSIGNED_CERT -eq 1 ]; then
   echo "The full chain (server + intermediate certificates together) is at:"
   echo "/usr/local/etc/pki/tls/certs/fullchain.pem"
   echo ""
+  echo "---------------"
 fi
-echo "---------------"
 if [ $NO_CERT -eq 1 ]; then
   echo "Using your web browser, go to http://${HOST_NAME}/guacamole to log in"
 else
