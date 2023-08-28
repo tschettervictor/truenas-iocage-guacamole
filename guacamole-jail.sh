@@ -197,7 +197,7 @@ iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/guacamole-client/extensions
 #
 #####
 
-# Add services to startup
+# Enable services
 iocage exec "${JAIL_NAME}" sysrc guacd_enable="YES"
 iocage exec "${JAIL_NAME}" sysrc tomcat9_enable="YES"
 iocage exec "${JAIL_NAME}" sysrc mysql_enable="YES"
@@ -207,7 +207,7 @@ iocage exec "${JAIL_NAME}" "cp -f /usr/local/share/java/classes/mysql-connector-
 iocage exec "${JAIL_NAME}" "tar xvfz /usr/local/share/guacamole-client/guacamole-auth-jdbc.tar.gz -C /tmp/"
 iocage exec "${JAIL_NAME}" "cp -f /tmp/guacamole-auth-jdbc-*/mysql/*.jar /usr/local/etc/guacamole-client/extensions"
 
-# Configure guacamole server file
+# Copy guacamole server files
 iocage exec "${JAIL_NAME}" "cp -f /usr/local/etc/guacamole-server/guacd.conf.sample /usr/local/etc/guacamole-server/guacd.conf"
 iocage exec "${JAIL_NAME}" "cp -f /usr/local/etc/guacamole-client/logback.xml.sample /usr/local/etc/guacamole-client/logback.xml"
 iocage exec "${JAIL_NAME}" "cp -f /usr/local/etc/guacamole-client/guacamole.properties.sample /usr/local/etc/guacamole-client/guacamole.properties"
@@ -358,17 +358,20 @@ else
   echo "Using your web browser, go to https://${HOST_NAME}/guacamole to log in"
 fi
 echo "---------------"
+echo "Database Information"
+echo "MySQL Username: root"
+echo "MySQL Password: $DB_ROOT_PASSWORD"
+echo "Guacamole DB User: $DB_USER"
+echo "Guacamole DB Password: "$DB_PASSWORD""
 if [ "${REINSTALL}" == "true" ]; then
-	echo "You did a reinstall, please use your old database and account credentials"
+	echo "---------------"
+	echo "You did a reinstall, please user your old credentials to log in."
 else
-	echo "Database Information"
- 	echo "MySQL Username: root"
-	echo "MySQL Password: $DB_ROOT_PASSWORD"
-	echo "Guacamole DB User: $DB_USER"
-	echo "Guacamole DB Password: "$DB_PASSWORD""
- 	echo "---------------"
-  	echo "User Information"
-   	echo "Default user is guacadmin"
-    	echo "Default password is guacadmin"
+	echo "---------------"
+	echo "User Information"
+	echo "Default user is guacadmin"
+	echo "Default password is guacadmin"
 fi
+echo "---------------"
 echo "All passwords are saved in /root/${JAIL_NAME}_db_password.txt"
+echo "---------------"
