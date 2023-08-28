@@ -259,7 +259,7 @@ then
 	exit 1
 fi
  	#iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-	iocage exec "${JAIL_NAME}" mysql -u root -e "GRANT ALL ON '${DB_NAME}'.* TO '${DB_USER}'@localhost IDENTIFIED BY '${DB_PASSWORD}';"
+	iocage exec "${JAIL_NAME}" mysql -u root -e "GRANT ALL ON ${DB_NAME}.* TO '${DB_USER}'@localhost IDENTIFIED BY '${DB_PASSWORD}';"
 	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
 	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
 	iocage exec "${JAIL_NAME}" mysql -u root -e "DROP DATABASE IF EXISTS test;"
