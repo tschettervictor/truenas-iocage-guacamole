@@ -226,13 +226,12 @@ iocage exec "${JAIL_NAME}" service mysql-server start
 
 if [ "${REINSTALL}" == "true" ]; then
 	echo "You did a reinstall, but database passwords will still be changed."
- 	echo "New passwords will still be save in the TrueNAS root directory."
+ 	echo "New passwords will still be saved in the TrueNAS root directory."
  	iocage exec "${JAIL_NAME}" mysql -u root -e "SET PASSWORD FOR '${DB_USER}'@localhost = PASSWORD('${DB_PASSWORD}');"
  	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
   	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 else
-	if ! iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE DATABASE ${DB_NAME};"
-                then
+	if ! iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE DATABASE ${DB_NAME};"; then
 		echo "Failed to create MariaDB database, aborting"
 		exit 1
 	fi
