@@ -21,20 +21,20 @@ DEFAULT_GW_IP=""
 INTERFACE="vnet0"
 VNET="on"
 POOL_PATH=""
+DB_PATH=""
 JAIL_NAME="guacamole"
 HOST_NAME=""
-DATABASE="mariadb"
-DB_NAME="MariaDB"
-DB_PATH=""
-CONFIG_PATH=""
 SELFSIGNED_CERT=0
 STANDALONE_CERT=0
 DNS_CERT=0
 NO_CERT=0
 CERT_EMAIL=""
 CONFIG_NAME="guacamole-config"
+DATABASE="mariadb"
 DB_NAME="guacamole"
 DB_USER="guacamole"
+DB_ROOT_PASSWORD=$(openssl rand -base64 15)
+DB_PASSWORD=$(openssl rand -base64 15)
 
 # Check for guacamole-config and set configuration
 SCRIPT=$(readlink -f "$0")
@@ -112,20 +112,11 @@ fi
 if [ -z "${DB_PATH}" ]; then
   DB_PATH="${POOL_PATH}"/guacamole/db
 fi
-if [ -z "${CONFIG_PATH}" ]; then
-  CONFIG_PATH="${POOL_PATH}"/guacamole/config
-fi
 
-if [ "${DB_PATH}" = "${CONFIG_PATH}" ]
+# Sanity check DB_PATH must be different from POOL_PATH
+if [ "${DB_PATH}" = "${POOL_PATH}" ]
 then
-  echo "DB_PATH and CONFIG_PATH must be different."
-  exit 1
-fi
-
-# Sanity check DB_PATH and CONFIG_PATH must be different from POOL_PATH
-if [ "${DB_PATH}" = "${POOL_PATH}" ] || [ "${CONFIG_PATH}" = "${POOL_PATH}" ] 
-then
-  echo "DB_PATH and CONFIG_PATH must be different from POOL_PATH!"
+  echo "DB_PATH must be different from POOL_PATH!"
   exit 1
 fi
 
@@ -143,26 +134,17 @@ fi
 
 # Check for reinstall
 if [ "$(ls -A "${DB_PATH}")" ]; then
-	echo "Existing Guacamole database detected... Checking compatibility for reinstall"
+	echo "Existing Guacamole database detected"
+ 	echo "Checking compatability for reinstall..."
 	if [ "$(ls -A "${DB_PATH}/${DATABASE}")" ]; then
 		echo "Database is compatible, continuing..."
 		REINSTALL="true"
 	else
 		echo "ERROR: You can not reinstall without the previous database"
-		echo "Please try again after removing your config files or using the same database used previously"
+		echo "Please try again after removing the database, or using the same database used previously"
 		exit 1
 	fi
 fi
-
-#if [ "${REINSTALL}" == "true" ]; then
-#	DB_ROOT_PASSWORD=$(cat "${CONFIG_PATH}"/${DATABASE}_db_password.txt)
-#	DB_PASSWORD=$(cat "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt)
-#	echo "Reinstall detected. Using existing passwords."
-#else	
-	DB_ROOT_PASSWORD=$(openssl rand -base64 15)
-	DB_PASSWORD=$(openssl rand -base64 15)
-	echo "Generating new passwords for database..."
-#fi
 
 #####
 #
@@ -200,16 +182,13 @@ rm /tmp/pkg.json
 #####
 
 mkdir -p "${DB_PATH}"/"${DATABASE}"
-mkdir -p "${CONFIG_PATH}"
 chown -R 88:88 "${DB_PATH}"/
 iocage exec "${JAIL_NAME}" mkdir -p /var/db/mysql
 iocage exec "${JAIL_NAME}" mkdir -p /mnt/includes
-iocage exec "${JAIL_NAME}" mkdir -p /mnt/config
 iocage exec "${JAIL_NAME}" mkdir -p /usr/local/www
 iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/rc.d
 iocage fstab -a "${JAIL_NAME}" "${DB_PATH}"/"${DATABASE}" /var/db/mysql nullfs rw 0 0
 iocage fstab -a "${JAIL_NAME}" "${INCLUDES_PATH}" /mnt/includes nullfs rw 0 0
-iocage fstab -a "${JAIL_NAME}" "${CONFIG_PATH}" /mnt/config nullfs rw 0 0
 iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/guacamole-client/lib
 iocage exec "${JAIL_NAME}" mkdir -p /usr/local/etc/guacamole-client/extensions
 
@@ -244,30 +223,29 @@ iocage exec "${JAIL_NAME}" 'echo "mysql-port:     3306" >> /usr/local/etc/guacam
 iocage exec "${JAIL_NAME}" 'echo "mysql-database: '${DB_NAME}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
 iocage exec "${JAIL_NAME}" 'echo "mysql-username: '${DB_USER}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
 iocage exec "${JAIL_NAME}" 'echo "mysql-password: '${DB_PASSWORD}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
-
 iocage exec "${JAIL_NAME}" service mysql-server start
 
 if [ "${REINSTALL}" == "true" ]; then
-	echo "You did a reinstall, please use your old database and account credentials."
+	echo "You did a reinstall, but database passwords will still be changed."
+ 	echo "New passwords will still be save in the TrueNAS root directory."
  	iocage exec "${JAIL_NAME}" mysql -u root -e "SET PASSWORD FOR '${DB_USER}'@localhost = PASSWORD('${DB_PASSWORD}');"
  	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
   	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 else
-	if ! iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE DATABASE ${DB_NAME};" 
-then
-	echo "Failed to create MariaDB database, aborting"
-	exit 1
-fi
-	iocage exec "${JAIL_NAME}" mysql -u root -e "GRANT ALL ON ${DB_NAME}.* TO '${DB_USER}'@localhost IDENTIFIED BY '${DB_PASSWORD}';"
-	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
-	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
-	iocage exec "${JAIL_NAME}" mysql -u root -e "DROP DATABASE IF EXISTS test;"
-	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
-	iocage exec "${JAIL_NAME}" mysql -u root -e "FLUSH PRIVILEGES;"
-	iocage exec "${JAIL_NAME}" mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
-	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
-	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
-	iocage exec "${JAIL_NAME}" "cat /tmp/guacamole-auth-jdbc-*/mysql/schema/*.sql | mysql -u root -p"${DB_ROOT_PASSWORD}" ${DB_NAME}"
+	if ! iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE DATABASE ${DB_NAME};" then
+		echo "Failed to create MariaDB database, aborting"
+		exit 1
+	fi
+		iocage exec "${JAIL_NAME}" mysql -u root -e "GRANT ALL ON ${DB_NAME}.* TO '${DB_USER}'@localhost IDENTIFIED BY '${DB_PASSWORD}';"
+		iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
+		iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
+		iocage exec "${JAIL_NAME}" mysql -u root -e "DROP DATABASE IF EXISTS test;"
+		iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';"
+		iocage exec "${JAIL_NAME}" mysql -u root -e "FLUSH PRIVILEGES;"
+		iocage exec "${JAIL_NAME}" mysqladmin --user=root password "${DB_ROOT_PASSWORD}" reload
+		iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
+		iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
+		iocage exec "${JAIL_NAME}" "cat /tmp/guacamole-auth-jdbc-*/mysql/schema/*.sql | mysql -u root -p"${DB_ROOT_PASSWORD}" ${DB_NAME}"
 fi
 
 # Copy server.xml file for tomcat9 (adds internalProxies valve)
@@ -354,15 +332,9 @@ iocage exec "${JAIL_NAME}" sysrc caddy_enable="YES"
 iocage exec "${JAIL_NAME}" service caddy start
 
 # Save passwords for later reference
-if [ "${REINSTALL}" == "true" ]; then
-	echo "Passwords do not need saving, they are the same."
-else
-	echo "${DB_NAME} root user is root and password is ${DB_ROOT_PASSWORD}" > /root/${JAIL_NAME}_db_password.txt
-	echo "Guacamole database user is ${DB_USER} and password is ${DB_PASSWORD}" >> /root/${JAIL_NAME}_db_password.txt
-	echo "Guacamole default username and password are both guacadmin." >> /root/${JAIL_NAME}_db_password.txt
-	echo "${DB_ROOT_PASSWORD}" > "${CONFIG_PATH}"/${DATABASE}_db_password.txt
-	echo "${DB_PASSWORD}" > "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt
-fi
+echo "${DATABASE} root user is root and password is ${DB_ROOT_PASSWORD}" > /root/${JAIL_NAME}_db_password.txt
+echo "Guacamole database user is ${DB_USER} and password is ${DB_PASSWORD}" >> /root/${JAIL_NAME}_db_password.txt
+echo "Guacamole default username and password are both guacadmin." >> /root/${JAIL_NAME}_db_password.txt
 
 echo "---------------"
 echo "Installation complete."
