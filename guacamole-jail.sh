@@ -363,6 +363,9 @@ else
 	echo "${DB_PASSWORD}" > "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt
 fi
 
+echo "---------------"
+echo "Installation complete."
+echo "---------------"
 echo ""
 if [ $STANDALONE_CERT -eq 1 ] || [ $DNS_CERT -eq 1 ]; then
   echo "You have obtained your Let's Encrypt certificate using the staging server."
@@ -381,24 +384,24 @@ elif [ $SELFSIGNED_CERT -eq 1 ]; then
   echo "/usr/local/etc/pki/tls/certs/fullchain.pem"
   echo ""
 fi
-
-echo "Installation complete."
-
+echo "---------------"
 if [ $NO_CERT -eq 1 ]; then
   echo "Using your web browser, go to http://${HOST_NAME}/guacamole to log in"
 else
   echo "Using your web browser, go to https://${HOST_NAME}/guacamole to log in"
 fi
-
-echo "Default user and password to log in the the WebUI are both guacadmin"
-
+echo "---------------"
 if [ "${REINSTALL}" == "true" ]; then
 	echo "You did a reinstall, please use your old database and account credentials"
 else
-	echo "MySQL Username: root"
+	echo "Database Information"
+ 	echo "MySQL Username: root"
 	echo "MySQL Password: $DB_ROOT_PASSWORD"
 	echo "Guacamole DB User: $DB_USER"
 	echo "Guacamole DB Password: "$DB_PASSWORD""
+ 	echo "---------------"
+  	echo "User Information"
+   	echo "Default user is guacadmin"
+    	echo "Default password is guacadmin"
 fi
-
 echo "All passwords are saved in /root/${JAIL_NAME}_db_password.txt"
