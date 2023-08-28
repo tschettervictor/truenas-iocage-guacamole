@@ -24,10 +24,8 @@ If you aren't able or willing to obtain a certificate from Let's Encrypt, this s
 
 ### Prerequisites (Other)
 You will need to create 
-- 1 Dataset named `guacamole` under which you will create two sub-datasets.
-- one named `db`, which will store the database.
-- one named `config`, which will be used to store database passwords in case of a reinstall.
-If these are not present, a directory `/guacamole` will be created in `$POOL_PATH` with the obove mentioned subdirectories. You will want to create the datasets, otherwise the directories will just be created. Datasets make it easy to do snapshots etc...
+- 1 Dataset named `guacamole` under which you will create 1 sub-dataset named `db`, which will store the database.
+If these are not present, a directory `/guacamole` will be created in `$POOL_PATH` with the obove mentioned subdirectory. You will want to create the datasets, otherwise the directories will just be created. Datasets make it easy to do snapshots etc...
 
 ### Installation
 Download the repository to a convenient directory on your TrueNAS system by changing to that directory and running `git clone https://github.com/tschettervictor/truenas-iocage-guacamole`.  Then change into the new `truenas-iocage-guacamole` directory and create a file called `guacamole-config` with your favorite text editor.  In its minimal form, it would look like this:
@@ -53,7 +51,6 @@ In addition, there are some other options which have sensible defaults, but can 
 
 * JAIL_NAME: The name of the jail, defaults to "nextcloud"
 * DB_PATH. This is the path to your database files. It defaults to POOL_PATH/guacamole/db
-* CONFIG_PATH.  This is the path to  password files for the database. ( needed for reinstall) It  defaults to POOL_PATH/guacamole/config
 * INTERFACE: The network interface to use for the jail.  Defaults to `vnet0`.
 * JAIL_INTERFACES: Defaults to `vnet0:bridge0`, but you can use this option to select a different network bridge if desired.  This is an advanced option; you're on your own here.
 * VNET: Whether to use the iocage virtual network stack.  Defaults to `on`.
@@ -74,8 +71,7 @@ This script has only been tested with Cloudflare, which works well.
 Visit the [Caddy download page](https://caddyserver.com/download) to see the DNS authentication plugins currently available.  To build Caddy with your desired plugin, use the last part of the "Package" on that page as DNS_PLUGIN in your `guacamole-config` file.  E.g., if the package name is `github.com/caddy-dns/cloudflare`, you'd set `DNS_PLUGIN=cloudflare`.  From that page, there are also links to the documentation for each plugin, which will describe what credentials are needed.  If your provider needs only an API token (as is the case with Cloudflare, and apparently with DNSPod and Gandi), you'll likely be able to set `DNS_TOKEN=long_api_token` in the `guacamole-config` file and not need to do anything else.  If your provider requires different credentials, you'll need to modify the Caddyfile to account for them.
 
 ### Notes
-- Reinstalls work as expected when all the files are present.
-- The way this script handles passwords for old database is by storing them in a directory that can be accessed when reinstalling. If you try to reinstall without them, guacamole will not work and will show error.
+- Reinstalls work as expected when the previous database is present.
 - This script copies the default server.xml file with the addition of the remoteIpHeader Valve, with the value set to 127.0.0.1 This is necessary for guacamole to properly log sessions with the correct IP. If set behind another reverse proxy, this value can be changed to the proxy IP, or alternately , the Caddyfile can be edited to trust the reverse proxy. The file is at `/usr/local/apache-tomcat-9.0/conf/server.xml`
 - Guacamole Trusted Proxy https://guacamole.apache.org/doc/gug/reverse-proxy.html
 - Caddy Trusted Proxy https://caddyserver.com/docs/caddyfile/options#trusted-proxies
