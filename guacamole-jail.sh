@@ -241,8 +241,8 @@ iocage exec "${JAIL_NAME}" sed -i -e 's/'localhost'/'0.0.0.0'/g' /usr/local/etc/
 # Add database connection
 iocage exec "${JAIL_NAME}" 'echo "mysql-hostname: localhost" >> /usr/local/etc/guacamole-client/guacamole.properties'
 iocage exec "${JAIL_NAME}" 'echo "mysql-port:     3306" >> /usr/local/etc/guacamole-client/guacamole.properties'
-iocage exec "${JAIL_NAME}" 'echo "mysql-database: ${DB_NAME}" >> /usr/local/etc/guacamole-client/guacamole.properties'
-iocage exec "${JAIL_NAME}" 'echo "mysql-username: ${DB_USER}" >> /usr/local/etc/guacamole-client/guacamole.properties'
+iocage exec "${JAIL_NAME}" 'echo "mysql-database: '${DB_NAME}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
+iocage exec "${JAIL_NAME}" 'echo "mysql-username: '${DB_USER}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
 iocage exec "${JAIL_NAME}" 'echo "mysql-password: '${DB_PASSWORD}'" >> /usr/local/etc/guacamole-client/guacamole.properties'
 
 iocage exec "${JAIL_NAME}" service mysql-server start
@@ -252,13 +252,11 @@ if [ "${REINSTALL}" == "true" ]; then
  	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
   	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 else
-	#iocage exec "${JAIL_NAME}" mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '${DB_ROOT_PASSWORD}';CREATE DATABASE 'guacamole_db';CREATE USER 'guacamole_user'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';GRANT SELECT,INSERT,UPDATE,DELETE ON guacamole_db.* TO 'guacamole_user'@'localhost';FLUSH PRIVILEGES;";
-if ! iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE DATABASE ${DB_NAME};" 
+	if ! iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE DATABASE ${DB_NAME};" 
 then
 	echo "Failed to create MariaDB database, aborting"
 	exit 1
 fi
- 	#iocage exec "${JAIL_NAME}" mysql -u root -e "CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
 	iocage exec "${JAIL_NAME}" mysql -u root -e "GRANT ALL ON ${DB_NAME}.* TO '${DB_USER}'@localhost IDENTIFIED BY '${DB_PASSWORD}';"
 	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='';"
 	iocage exec "${JAIL_NAME}" mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"
@@ -398,8 +396,8 @@ if [ "${REINSTALL}" == "true" ]; then
 	echo "You did a reinstall, please use your old database and account credentials"
 else
 	echo "MySQL Username: root"
-	echo "MySQL Password: "$MYSQLROOT""
-	echo "Guacamole DB User: guacamole_user"
+	echo "MySQL Password: $DB_ROOT_PASSWORD"
+	echo "Guacamole DB User: $DB_USER"
 	echo "Guacamole DB Password: "$DB_PASSWORD""
 fi
 
