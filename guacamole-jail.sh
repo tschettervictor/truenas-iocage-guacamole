@@ -154,15 +154,15 @@ if [ "$(ls -A "${DB_PATH}")" ]; then
 	fi
 fi
 
-if [ "${REINSTALL}" == "true" ]; then
-	DB_ROOT_PASSWORD=$(cat "${CONFIG_PATH}"/${DATABASE}_db_password.txt)
-	DB_PASSWORD=$(cat "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt)
-	echo "Reinstall detected. Using existing passwords."
-else	
+#if [ "${REINSTALL}" == "true" ]; then
+#	DB_ROOT_PASSWORD=$(cat "${CONFIG_PATH}"/${DATABASE}_db_password.txt)
+#	DB_PASSWORD=$(cat "${CONFIG_PATH}"/${JAIL_NAME}_db_password.txt)
+#	echo "Reinstall detected. Using existing passwords."
+#else	
 	DB_ROOT_PASSWORD=$(openssl rand -base64 15)
 	DB_PASSWORD=$(openssl rand -base64 15)
 	echo "Generating new passwords for database..."
-fi
+#fi
 
 #####
 #
@@ -249,6 +249,7 @@ iocage exec "${JAIL_NAME}" service mysql-server start
 
 if [ "${REINSTALL}" == "true" ]; then
 	echo "You did a reinstall, please use your old database and account credentials."
+ 	iocage exec "${JAIL_NAME}" mysql -u root -e "SET PASSWORD FOR '${DB_USER}'@localhost = PASSWORD('${DB_PASSWORD}');"
  	iocage exec "${JAIL_NAME}" cp -f /mnt/includes/my.cnf /root/.my.cnf
   	iocage exec "${JAIL_NAME}" sed -i '' "s|mypassword|${DB_ROOT_PASSWORD}|" /root/.my.cnf
 else
