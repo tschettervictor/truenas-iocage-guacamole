@@ -1,5 +1,5 @@
 # truenas-iocage-guacamole
-Script to create an iocage jail on TrueNAS for the latest guacamole pkg release, including Caddy 2.x, MySQL, and Let's Encrypt
+Script to create an iocage jail on TrueNAS for the latest guacamole pkg release, including Caddy 2.x, MariaDB, and Let's Encrypt
 
 This script will create an iocage jail on TrueNAS CORE 13.0 with the latest release of guacamole pkg, along with its dependencies.  It will obtain a trusted certificate from Let's Encrypt for the system, install it, and configure it to renew automatically.  It will create the database and generate a strong root password and user password for the database system.  It will configure the jail to store the database outside the jail, so it will not be lost in the event you need to rebuild the jail.
 
@@ -49,7 +49,7 @@ Many of the options are self-explanatory, and all should be adjusted to suit you
  
 In addition, there are some other options which have sensible defaults, but can be adjusted if needed.  These are:
 
-* JAIL_NAME: The name of the jail, defaults to "nextcloud"
+* JAIL_NAME: The name of the jail, defaults to "guacamole"
 * DB_PATH. This is the path to your database files. It defaults to POOL_PATH/guacamole/db
 * INTERFACE: The network interface to use for the jail.  Defaults to `vnet0`.
 * JAIL_INTERFACES: Defaults to `vnet0:bridge0`, but you can use this option to select a different network bridge if desired.  This is an advanced option; you're on your own here.
