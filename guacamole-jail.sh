@@ -161,7 +161,7 @@ cat <<__EOF__ >/tmp/pkg.json
   "guacamole-client",
   "mariadb106-server",
   "mariadb106-client",
-  "mysql-connector-java"
+  "mysql-connector-j"
   ]
 }
 __EOF__
