@@ -203,7 +203,7 @@ iocage exec "${JAIL_NAME}" sysrc tomcat9_enable="YES"
 iocage exec "${JAIL_NAME}" sysrc mysql_enable="YES"
 
 # Extract java connector to guacamole
-iocage exec "${JAIL_NAME}" "cp -f /usr/local/share/java/classes/mysql-connector-java.jar /usr/local/etc/guacamole-client/lib"
+iocage exec "${JAIL_NAME}" "cp -f /usr/local/share/java/classes/mysql-connector-j.jar /usr/local/etc/guacamole-client/lib"
 iocage exec "${JAIL_NAME}" "tar xvfz /usr/local/share/guacamole-client/guacamole-auth-jdbc.tar.gz -C /tmp/"
 iocage exec "${JAIL_NAME}" "cp -f /tmp/guacamole-auth-jdbc-*/mysql/*.jar /usr/local/etc/guacamole-client/extensions"
 
