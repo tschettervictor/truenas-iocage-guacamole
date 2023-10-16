@@ -26,13 +26,14 @@ If you aren't able or willing to obtain a certificate from Let's Encrypt, this s
 You will need to create 
 - 1 Dataset named `guacamole` under which you will create 1 sub-dataset named `db`, which will store the database.
 If these are not present, a directory `/guacamole` will be created in `$POOL_PATH` with the obove mentioned subdirectory. You will want to create the datasets, otherwise the directories will just be created. Datasets make it easy to do snapshots etc...
+e.g. `/mnt/mypool/apps/guacamole/db`
 
 ### Installation
 Download the repository to a convenient directory on your TrueNAS system by changing to that directory and running `git clone https://github.com/tschettervictor/truenas-iocage-guacamole`.  Then change into the new `truenas-iocage-guacamole` directory and create a file called `guacamole-config` with your favorite text editor.  In its minimal form, it would look like this:
 ```
 JAIL_IP="192.168.1.199"
 DEFAULT_GW_IP="192.168.1.1"
-POOL_PATH="/mnt/tank"
+POOL_PATH="/mnt/tank/apps"
 HOST_NAME="YOUR_FQDN"
 NO_CERT=1
 ```
@@ -40,7 +41,7 @@ Many of the options are self-explanatory, and all should be adjusted to suit you
 
 * JAIL_IP is the IP address for your jail.  You can optionally add the netmask in CIDR notation (e.g., 192.168.1.199/24).  If not specified, the netmask defaults to 24 bits.  Values of less than 8 bits or more than 30 bits are invalid.
 * DEFAULT_GW_IP is the address for your default gateway
-* POOL_PATH is the path for your data pool.
+* POOL_PATH is the path where the script will create the `guacamole` folder if the `guacamole` dataset was not created. It is best to create a dataset inside this path called `guacamole`.
 * HOST_NAME is the fully-qualified domain name you want to assign to your installation.  If you are planning to get a Let's Encrypt certificate (recommended), you must own (or at least control) this domain, because Let's Encrypt will test that control.  If you're using a self-signed cert, or not getting a cert at all, it's only important that this hostname resolve to your jail inside your network.
 * DNS_CERT, STANDALONE_CERT, SELFSIGNED_CERT, and NO_CERT determine which method will be used to generate a TLS certificate (or, in the case of NO_CERT, indicate that you don't want to use SSL at all).  DNS_CERT and STANDALONE_CERT indicate use of DNS or HTTP validation for Let's Encrypt, respectively.  One **and only one** of these must be set to 1.
 * DNS_PLUGIN: If DNS_CERT is set, DNS_PLUGIN must contain the name of the DNS validation plugin you'll use with Caddy to validate domain control.  At this time, the only valid value is `cloudflare` (but see below).
