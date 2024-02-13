@@ -212,8 +212,7 @@ iocage exec "${JAIL_NAME}" "cp -f /usr/local/etc/guacamole-server/guacd.conf.sam
 iocage exec "${JAIL_NAME}" "cp -f /usr/local/etc/guacamole-client/logback.xml.sample /usr/local/etc/guacamole-client/logback.xml"
 iocage exec "${JAIL_NAME}" "cp -f /usr/local/etc/guacamole-client/guacamole.properties.sample /usr/local/etc/guacamole-client/guacamole.properties"
 
-# Change default port Tomcat and default bind host ip
-iocage exec "${JAIL_NAME}" sed -i -e 's/"8080"/"8085"/g' /usr/local/apache-tomcat-9.0/conf/server.xml
+# Change default bind host ip
 iocage exec "${JAIL_NAME}" sed -i -e 's/'localhost'/'0.0.0.0'/g' /usr/local/etc/guacamole-server/guacd.conf
 
 # Add database connection
